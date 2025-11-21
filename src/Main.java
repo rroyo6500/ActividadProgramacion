@@ -1,7 +1,8 @@
 import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageInputStream;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -24,10 +25,13 @@ class Interfaz extends JFrame {
             {'-', '-', '-', 'X', 'X'},
             {'-', 'X', '-', '-', '-',},
             {'X', '-', '-', '-', '-',},
-            {'-', '-', 'X', 'X', '-',}
+            {'-', '-', 'X', 'X', '-',},
     };
+    int[] playerPos;
+    int[] tesoroPos;
 
     public Interfaz() {
+        JFrame juego = this;
         setLayout(null);
 
         BufferedImage imgTesoro;
@@ -58,6 +62,42 @@ class Interfaz extends JFrame {
                     x = 0;
                     y += 50;
                 }
+
+                try {
+                    if (playerPos[0] == tesoroPos[0] && playerPos[1] == tesoroPos[1]) {
+                        juego.setVisible(false);
+
+                        JFrame win = new JFrame();
+                        win.setLayout(null);
+                        win.setBounds(0, 0, 250, 125);
+                        win.setLocationRelativeTo(null);
+                        win.setTitle("Has Ganado!");
+                        win.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                        win.setVisible(true);
+                        win.setFocusable(true);
+                        win.requestFocus();
+                        win.addKeyListener(new KeyAdapter() {
+                            @Override
+                            public void keyPressed(KeyEvent e) {
+                                super.keyPressed(e);
+
+                                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                                    System.exit(0);
+                                }
+                            }
+                        });
+
+                        JLabel text = new JLabel("¡FELICIDADES!");
+                        text.setBounds(0, 20, 250, 25);
+                        text.setHorizontalAlignment(JLabel.CENTER);
+                        win.add(text);
+
+                        JLabel text2 = new JLabel("¡Has encontrado el tesoro!");
+                        text2.setBounds(0, 50, 250, 25);
+                        text2.setHorizontalAlignment(JLabel.CENTER);
+                        win.add(text2);
+                    }
+                } catch (Exception _) {}
 
             }
         };
@@ -100,7 +140,10 @@ class Interfaz extends JFrame {
                 int x = Integer.parseInt(posX.getText())-1;
                 int y = Integer.parseInt(posY.getText())-1;
 
-                mapa[x][y] = 'P';
+                playerPos = new int[]{x, y};
+
+                mapa[y][x] = 'P';
+                Jugador.setVisible(false);
                 pantalla.repaint();
             });
             Jugador.add(anadir);
@@ -143,18 +186,63 @@ class Interfaz extends JFrame {
                 int x = Integer.parseInt(posX.getText())-1;
                 int y = Integer.parseInt(posY.getText())-1;
 
-                mapa[x][y] = 'T';
+                tesoroPos = new int[]{x, y};
+
+                mapa[y][x] = 'T';
+                Tesoro.setVisible(false);
                 pantalla.repaint();
             });
             Tesoro.add(anadir);
         }
         //---------------------------------
 
-        setTitle("Interfaz");
+        setTitle("Encuentra el tesoro");
         setBounds(0, 0, 500, 500);
         setResizable(false);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
+        setFocusable(true);
+        requestFocus();
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                super.keyPressed(e);
+
+                try {
+                    if (e.getKeyChar() == 'w') {
+                        if (mapa[playerPos[1] - 1][playerPos[0]] == 'X')
+                            throw new IllegalArgumentException("El jugador no puede traspasar los muros.");
+                        mapa[playerPos[1] - 1][playerPos[0]] = 'P';
+                        mapa[playerPos[1]][playerPos[0]] = '-';
+                        playerPos[1] = playerPos[1] - 1;
+                    } else if (e.getKeyChar() == 'a') {
+                        if (mapa[playerPos[1]][playerPos[0] - 1] == 'X')
+                            throw new IllegalArgumentException("El jugador no puede traspasar los muros.");
+                        mapa[playerPos[1]][playerPos[0] - 1] = 'P';
+                        mapa[playerPos[1]][playerPos[0]] = '-';
+                        playerPos[0] = playerPos[0] - 1;
+                    } else if (e.getKeyChar() == 'd') {
+                        if (mapa[playerPos[1]][playerPos[0] + 1] == 'X')
+                            throw new IllegalArgumentException("El jugador no puede traspasar los muros.");
+                        mapa[playerPos[1]][playerPos[0] + 1] = 'P';
+                        mapa[playerPos[1]][playerPos[0]] = '-';
+                        playerPos[0] = playerPos[0] + 1;
+                    } else if (e.getKeyChar() == 's') {
+                        if (mapa[playerPos[1] + 1][playerPos[0]] == 'X')
+                            throw new IllegalArgumentException("El jugador no puede traspasar los muros.");
+                        mapa[playerPos[1] + 1][playerPos[0]] = 'P';
+                        mapa[playerPos[1]][playerPos[0]] = '-';
+                        playerPos[1] = playerPos[1] + 1;
+                    }
+                } catch (ArrayIndexOutOfBoundsException ex) {
+                    System.err.println("ERROR: El jugador no puede salir fuera del terreno del mapa.");
+                } catch (IllegalArgumentException ex) {
+                    System.err.println("ERROR: " + ex.getMessage());
+                }
+                pantalla.repaint();
+
+            }
+        });
     }
 }
