@@ -1,5 +1,6 @@
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -29,6 +30,8 @@ class Interfaz extends JFrame {
     };
     int[] playerPos;
     int[] tesoroPos;
+
+    char[] controlKeys = {'w', 'a', 's', 'd'};
 
     public Interfaz() {
         JFrame juego = this;
@@ -105,18 +108,18 @@ class Interfaz extends JFrame {
         add(pantalla);
 
         JPanel Jugador = new JPanel();
-        Jugador.setBounds(0, 260, 250, 240);
+        Jugador.setBounds(10, 275, 225, 175);
         Jugador.setLayout(null);
         Jugador.setVisible(true);
+        Jugador.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.BLACK),
+                "Jugador", 0, TitledBorder.DEFAULT_POSITION,
+                new Font("Arial", Font.BOLD, 20), Color.BLACK)
+        );
         add(Jugador);
 
         //---------------------------------
         {
-            JLabel Titulo = new JLabel("Jugador");
-            Titulo.setFont(new Font("Arial", Font.BOLD, 20));
-            Titulo.setBounds(10, 20, 250, 20);
-            Jugador.add(Titulo);
-
             JLabel LposX = new JLabel("Coordenada X (1 - 5)");
             LposX.setBounds(10, 50, 150, 20);
             Jugador.add(LposX);
@@ -135,34 +138,38 @@ class Interfaz extends JFrame {
 
             JButton anadir = new JButton("Añadir Jugador");
             anadir.setBackground(Color.GREEN);
-            anadir.setBounds(10, 150, 200, 40);
+            anadir.setBounds(12, 125, 200, 40);
             anadir.addActionListener(_ -> {
-                int x = Integer.parseInt(posX.getText())-1;
-                int y = Integer.parseInt(posY.getText())-1;
+                try {
+                    int x = Integer.parseInt(posX.getText()) - 1;
+                    int y = Integer.parseInt(posY.getText()) - 1;
 
-                playerPos = new int[]{x, y};
+                    playerPos = new int[]{x, y};
 
-                mapa[y][x] = 'P';
-                Jugador.setVisible(false);
-                pantalla.repaint();
+                    mapa[y][x] = 'P';
+                    Jugador.setVisible(false);
+                    pantalla.repaint();
+                } catch (Exception _) {
+                    System.err.println("ERROR: Se ha intentado añadir un caracter no numerico en las coordenadas");
+                }
             });
             Jugador.add(anadir);
         }
         //---------------------------------
 
         JPanel Tesoro = new JPanel();
-        Tesoro.setBounds(250, 260, 250, 240);
+        Tesoro.setBounds(250, 275, 225, 175);
+        Tesoro.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.BLACK),
+                "Tesoro", 0, TitledBorder.DEFAULT_POSITION,
+                new Font("Arial", Font.BOLD, 20), Color.BLACK)
+        );
         Tesoro.setLayout(null);
         Tesoro.setVisible(true);
         add(Tesoro);
 
         //---------------------------------
         {
-            JLabel Titulo = new JLabel("Tesoro");
-            Titulo.setFont(new Font("Arial", Font.BOLD, 20));
-            Titulo.setBounds(10, 20, 250, 20);
-            Tesoro.add(Titulo);
-
             JLabel LposX = new JLabel("Coordenada X (1 - 5)");
             LposX.setBounds(10, 50, 150, 20);
             Tesoro.add(LposX);
@@ -181,16 +188,20 @@ class Interfaz extends JFrame {
 
             JButton anadir = new JButton("Añadir Tesoro");
             anadir.setBackground(Color.GREEN);
-            anadir.setBounds(10, 150, 200, 40);
+            anadir.setBounds(12, 125, 200, 40);
             anadir.addActionListener(_ -> {
-                int x = Integer.parseInt(posX.getText())-1;
-                int y = Integer.parseInt(posY.getText())-1;
+                try {
+                    int x = Integer.parseInt(posX.getText()) - 1;
+                    int y = Integer.parseInt(posY.getText()) - 1;
 
-                tesoroPos = new int[]{x, y};
+                    tesoroPos = new int[]{x, y};
 
-                mapa[y][x] = 'T';
-                Tesoro.setVisible(false);
-                pantalla.repaint();
+                    mapa[y][x] = 'T';
+                    Tesoro.setVisible(false);
+                    pantalla.repaint();
+                } catch (Exception _) {
+                    System.err.println("ERROR: Se ha intentado añadir un caracter no numerico en las coordenadas");
+                }
             });
             Tesoro.add(anadir);
         }
@@ -209,31 +220,148 @@ class Interfaz extends JFrame {
             public void keyPressed(KeyEvent e) {
                 super.keyPressed(e);
 
+                JFrame help;
+
                 try {
-                    if (e.getKeyChar() == 'w') {
+                    if (e.getKeyChar() == controlKeys[0]) {
                         if (mapa[playerPos[1] - 1][playerPos[0]] == 'X')
                             throw new IllegalArgumentException("El jugador no puede traspasar los muros.");
                         mapa[playerPos[1] - 1][playerPos[0]] = 'P';
                         mapa[playerPos[1]][playerPos[0]] = '-';
                         playerPos[1] = playerPos[1] - 1;
-                    } else if (e.getKeyChar() == 'a') {
+                    } else if (e.getKeyChar() == controlKeys[1]) {
                         if (mapa[playerPos[1]][playerPos[0] - 1] == 'X')
                             throw new IllegalArgumentException("El jugador no puede traspasar los muros.");
                         mapa[playerPos[1]][playerPos[0] - 1] = 'P';
                         mapa[playerPos[1]][playerPos[0]] = '-';
                         playerPos[0] = playerPos[0] - 1;
-                    } else if (e.getKeyChar() == 'd') {
-                        if (mapa[playerPos[1]][playerPos[0] + 1] == 'X')
-                            throw new IllegalArgumentException("El jugador no puede traspasar los muros.");
-                        mapa[playerPos[1]][playerPos[0] + 1] = 'P';
-                        mapa[playerPos[1]][playerPos[0]] = '-';
-                        playerPos[0] = playerPos[0] + 1;
-                    } else if (e.getKeyChar() == 's') {
+                    } else if (e.getKeyChar() == controlKeys[2]) {
                         if (mapa[playerPos[1] + 1][playerPos[0]] == 'X')
                             throw new IllegalArgumentException("El jugador no puede traspasar los muros.");
                         mapa[playerPos[1] + 1][playerPos[0]] = 'P';
                         mapa[playerPos[1]][playerPos[0]] = '-';
                         playerPos[1] = playerPos[1] + 1;
+                    } else if (e.getKeyChar() == controlKeys[3]) {
+                        if (mapa[playerPos[1]][playerPos[0] + 1] == 'X')
+                            throw new IllegalArgumentException("El jugador no puede traspasar los muros.");
+                        mapa[playerPos[1]][playerPos[0] + 1] = 'P';
+                        mapa[playerPos[1]][playerPos[0]] = '-';
+                        playerPos[0] = playerPos[0] + 1;
+                    } else if (e.getKeyChar() == 'i') {
+
+                        help = new JFrame("Instrucciones");
+                        help.setLayout(new BoxLayout(help.getContentPane(), BoxLayout.X_AXIS));
+                        help.setBounds(0, 0, 1000, 800);
+                        help.setResizable(false);
+                        help.setLocationRelativeTo(null);
+                        help.setVisible(true);
+                        help.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+                        JPanel informacionBasica = new JPanel();
+                        informacionBasica.setLayout(null);
+                        informacionBasica.setBorder(BorderFactory.createTitledBorder(
+                                BorderFactory.createLineBorder(Color.BLACK),
+                                "Informacion Basica", 0, TitledBorder.DEFAULT_POSITION,
+                                new Font("Arial", Font.BOLD, 15), Color.BLACK)
+                        );
+                        help.add(informacionBasica);
+                        //---------------------------------
+                        {
+                            JLabel pTitle = new JLabel("Como añadir al Jugador:");
+                            pTitle.setBounds(8, 20, 480, 25);
+                            pTitle.setFont(new Font("Arial", Font.BOLD, 15));
+                            informacionBasica.add(pTitle);
+
+                            JLabel[] pText = {
+                                    new JLabel("1. Añade la posicion X"),
+                                    new JLabel("2. Añade la posicion Y"),
+                                    new JLabel("3. Pulsa el boton de 'Añadir Jugador'")
+                            };
+                            for (int i = 0; i < pText.length; i++) {
+                                pText[i].setBounds(25, (65 + (i * 20)), 250, 20);
+                                informacionBasica.add(pText[i]);
+                            }
+                            ImageIcon instPlayer = new ImageIcon(path + "\\Imagenes\\InstPlayer.png");
+                            Image instPlayerImg = instPlayer.getImage().getScaledInstance(160, 120, Image.SCALE_SMOOTH);
+                            JLabel pImg = new JLabel(new ImageIcon(instPlayerImg));
+                            pImg.setBounds(300, 20, 160, 120);
+                            informacionBasica.add(pImg);
+                        }
+                        {
+                            JLabel pTesoro = new JLabel("Como añadir el Tesoro:");
+                            pTesoro.setBounds(8, 150, 480, 25);
+                            pTesoro.setFont(new Font("Arial", Font.BOLD, 15));
+                            informacionBasica.add(pTesoro);
+
+                            JLabel[] pText = {
+                                    new JLabel("1. Añade la posicion X"),
+                                    new JLabel("2. Añade la posicion Y"),
+                                    new JLabel("3. Pulsa el boton de 'Añadir Tesoro'")
+                            };
+                            for (int i = 0; i < pText.length; i++) {
+                                pText[i].setBounds(25, (195 + (i * 20)), 250, 20);
+                                informacionBasica.add(pText[i]);
+                            }
+                            ImageIcon instTesoro = new ImageIcon(path + "\\Imagenes\\InstTesoro.png");
+                            Image instTesoroImg = instTesoro.getImage().getScaledInstance(160, 120, Image.SCALE_SMOOTH);
+                            JLabel pImg = new JLabel(new ImageIcon(instTesoroImg));
+                            pImg.setBounds(300, 150, 160, 120);
+                            informacionBasica.add(pImg);
+                        }
+                        {
+                            JLabel coordenadas = new JLabel("Coordenadas:");
+                            coordenadas.setBounds(8, 275, 480, 25);
+                            coordenadas.setFont(new Font("Arial", Font.BOLD, 15));
+                            informacionBasica.add(coordenadas);
+
+                            ImageIcon imgCoordenadas = new ImageIcon(path + "\\Imagenes\\Pantalla.png");
+                            JLabel pImg = new JLabel(imgCoordenadas);
+                            pImg.setBounds(100, 350, 300, 300);
+                            informacionBasica.add(pImg);
+                        }
+                        //---------------------------------
+                        JPanel rightPart = new JPanel();
+                        rightPart.setLayout(new BoxLayout(rightPart, BoxLayout.Y_AXIS));
+                        help.add(rightPart);
+
+                        JPanel movimiento = new JPanel();
+                        movimiento.setLayout(null);
+                        movimiento.setBorder(BorderFactory.createTitledBorder(
+                                BorderFactory.createLineBorder(Color.BLACK),
+                                "Movimiento", 0, TitledBorder.DEFAULT_POSITION,
+                                new Font("Arial", Font.BOLD, 15), Color.BLACK)
+                        );
+                        rightPart.add(movimiento);
+                        //---------------------------------
+                        JLabel up = new JLabel("Moverse hacia arriba:");
+                        up.setBounds(25, 20, 200, 20);
+                        movimiento.add(up);
+                        JLabel upKey = new JLabel(String.valueOf(controlKeys[0]));
+                        upKey.setBounds(225, 20, 200, 20);
+                        movimiento.add(upKey);
+
+                        JLabel down = new JLabel("Moverse hacia abajo:");
+                        down.setBounds(25, 40, 200, 20);
+                        movimiento.add(down);
+                        JLabel downKey = new JLabel(String.valueOf(controlKeys[2]));
+                        downKey.setBounds(225, 40, 200, 20);
+                        movimiento.add(downKey);
+
+                        JLabel left = new JLabel("Moverse hacia la izquierda:");
+                        left.setBounds(25, 60, 200, 20);
+                        movimiento.add(left);
+                        JLabel leftKey = new JLabel(String.valueOf(controlKeys[1]));
+                        leftKey.setBounds(225, 60, 200, 20);
+                        movimiento.add(leftKey);
+
+                        JLabel right = new JLabel("Moverse hacia la derecha:");
+                        right.setBounds(25, 80, 200, 20);
+                        movimiento.add(right);
+                        JLabel rightKey = new JLabel(String.valueOf(controlKeys[3]));
+                        rightKey.setBounds(225, 80, 200, 20);
+                        movimiento.add(rightKey);
+                        //---------------------------------
+
                     }
                 } catch (ArrayIndexOutOfBoundsException ex) {
                     System.err.println("ERROR: El jugador no puede salir fuera del terreno del mapa.");
@@ -241,8 +369,11 @@ class Interfaz extends JFrame {
                     System.err.println("ERROR: " + ex.getMessage());
                 }
                 pantalla.repaint();
-
             }
         });
+
+        KeyEvent keyEvent = new KeyEvent(this, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_I, 'i');
+        getKeyListeners()[0].keyPressed(keyEvent);
+
     }
 }
