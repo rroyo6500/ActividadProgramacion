@@ -1,42 +1,39 @@
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Random;
 
-public class Main {
+public class JuegoProgramacion extends JFrame{
     public static void main(String[] args) {
-        new Interfaz();
+        new JuegoProgramacion();
     }
-}
-
-class Interfaz extends JFrame {
 
     static Path currentDirectoryPath = FileSystems.getDefault().getPath("");
     public static String path = currentDirectoryPath.toAbsolutePath().toString();
 
     final Random R = new Random();
 
-    final char[][] mapa = new char[10][10];
+    final char[][] mapa = new char[12][12];
     final int[] controlKeys = {87, 65, 83, 68};
 
     int[] enemyPos;
     int[] playerPos;
     int[] tesoroPos;
 
-    public Interfaz() {
+    public JuegoProgramacion() {
         JFrame juego = this;
         setLayout(null);
 
         for (int i = 0; i < mapa.length; i++) {
             for (int j = 0; j < mapa[i].length; j++) {
+                if (i == 0 || i == mapa.length - 1 || j == 0 || j == mapa[i].length - 1) {
+                    mapa[i][j] = 'X';
+                    continue;
+                }
                 int r = R.nextInt(0, (int) mapa.length / 2);
                 if (r == 0) {
                     mapa[i][j] = 'X';
@@ -107,6 +104,39 @@ class Interfaz extends JFrame {
                         text2.setBounds(0, 50, 250, 25);
                         text2.setHorizontalAlignment(JLabel.CENTER);
                         win.add(text2);
+                    } else if (playerPos[0] == enemyPos[0] && playerPos[1] == enemyPos[1]) {
+
+                        juego.setVisible(false);
+
+                        JFrame dead = new JFrame();
+                        dead.setLayout(null);
+                        dead.setBounds(0, 0, 250, 125);
+                        dead.setLocationRelativeTo(null);
+                        dead.setTitle("Has Ganado!");
+                        dead.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                        dead.setVisible(true);
+                        dead.setFocusable(true);
+                        dead.requestFocus();
+                        dead.addKeyListener(new KeyAdapter() {
+                            @Override
+                            public void keyPressed(KeyEvent e) {
+                                super.keyPressed(e);
+
+                                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                                    System.exit(0);
+                                }
+                            }
+                        });
+
+                        JLabel text = new JLabel("¡GAME OVER!");
+                        text.setBounds(0, 20, 250, 25);
+                        text.setHorizontalAlignment(JLabel.CENTER);
+                        dead.add(text);
+
+                        JLabel text2 = new JLabel("¡El Monstruo te ha cazado!");
+                        text2.setBounds(0, 50, 250, 25);
+                        text2.setHorizontalAlignment(JLabel.CENTER);
+                        dead.add(text2);
                     }
                 } catch (Exception _) {}
 
@@ -149,8 +179,8 @@ class Interfaz extends JFrame {
             anadir.setBounds(12, 125, 200, 40);
             anadir.addActionListener(_ -> {
                 try {
-                    int x = Integer.parseInt(posX.getText()) - 1;
-                    int y = Integer.parseInt(posY.getText()) - 1;
+                    int x = Integer.parseInt(posX.getText());
+                    int y = Integer.parseInt(posY.getText());
 
                     if (mapa[y][x] == 'X' || mapa[y][x] == 'T') {
                         new JError("No puedes colocar al Jugador en la misma posicion que una pared");
@@ -232,8 +262,8 @@ class Interfaz extends JFrame {
                             }
                         }
                     } else {
-                        x = Integer.parseInt(posX.getText()) - 1;
-                        y = Integer.parseInt(posY.getText()) - 1;
+                        x = Integer.parseInt(posX.getText());
+                        y = Integer.parseInt(posY.getText());
 
                         if (mapa[y][x] == 'X') {
                             new JError("No puedes colocar el Tesoro en la misma posicion que una pared");
@@ -274,6 +304,20 @@ class Interfaz extends JFrame {
 
                 JFrame help;
 
+                int rX = R.nextInt(0, mapa[0].length);
+                int rY = R.nextInt(0, mapa.length);
+
+                try {
+                    while (mapa[rY][rX] == 'X' || tesoroPos[0] == rX && tesoroPos[1] == rY) {
+                        rX = R.nextInt(0, mapa[0].length);
+                        rY = R.nextInt(0, mapa.length);
+                    }
+                } catch (Exception _) {}
+
+                mapa[enemyPos[1]][enemyPos[0]] = '-';
+                mapa[rY][rX] = 'E';
+                enemyPos = new int[]{rX, rY};
+
                 try {
                     if (e.getKeyCode() == controlKeys[0]) {
                         if (mapa[playerPos[1] - 1][playerPos[0]] == 'X')
@@ -300,7 +344,6 @@ class Interfaz extends JFrame {
                         mapa[playerPos[1]][playerPos[0]] = '-';
                         playerPos[0] = playerPos[0] + 1;
                     } else if (e.getKeyChar() == 'i') {
-
                         help = new JFrame("Instrucciones");
                         help.setLayout(new BoxLayout(help.getContentPane(), BoxLayout.X_AXIS));
 
@@ -492,20 +535,6 @@ class Interfaz extends JFrame {
                         help.setVisible(true);
                         help.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                     }
-
-                    int rX = R.nextInt(0, mapa[0].length);
-                    int rY = R.nextInt(0, mapa.length);
-
-                    while (mapa[rY][rX] == 'X'){
-                        rX = R.nextInt(0, mapa[0].length);
-                        rY = R.nextInt(0, mapa.length);
-                    }
-
-                    mapa[enemyPos[1]][enemyPos[0]] = '-';
-                    mapa[rY][rX] = 'E';
-                    enemyPos = new int[]{rX, rY};
-                } catch (ArrayIndexOutOfBoundsException _) {
-                    System.err.println("ERROR: El jugador no puede salir fuera del terreno del mapa.");
                 } catch (IllegalArgumentException ex) {
                     System.err.println("ERROR: " + ex.getMessage());
                 }
