@@ -19,7 +19,9 @@ public class JuegoProgramacion extends JFrame{
 
     final char[][] mapa = new char[12][12];
     final int[] controlKeys = {87, 65, 83, 68};
+    boolean infDungeon = false;
 
+    int[] doorPos;
     int[] enemyPos;
     int[] playerPos;
     int[] tesoroPos;
@@ -37,9 +39,6 @@ public class JuegoProgramacion extends JFrame{
                 int r = R.nextInt(0, (int) mapa.length / 2);
                 if (r == 0) {
                     mapa[i][j] = 'X';
-                } else if (r == ((int) mapa.length / 2) - 1 && enemyPos == null) {
-                    enemyPos = new int[]{j, i};
-                    mapa[i][j] = 'E';
                 } else {
                     mapa[i][j] = '-';
                 }
@@ -50,6 +49,58 @@ public class JuegoProgramacion extends JFrame{
             @Override
             public void paint(Graphics g){
                 super.paint(g);
+
+                if (playerPos != null && doorPos != null) {
+                    if (playerPos[0] == doorPos[0] && playerPos[1] == doorPos[1]) {
+                        infDungeon = true;
+                    }
+                }
+                if (infDungeon) {
+                    boolean Tesoro = false;
+                    tesoroPos = null;
+                    for (int i = 0; i < mapa.length; i++) {
+                        for (int j = 0; j < mapa[i].length; j++) {
+                            if (i == 0 || i == mapa.length - 1 || j == 0 || j == mapa[i].length - 1) {
+                                mapa[i][j] = 'X';
+                                continue;
+                            }
+                            int r = R.nextInt(0, (int) mapa.length / 2);
+                            if (r == 0) {
+                                mapa[i][j] = 'X';
+                            } else if (R.nextInt(0, 1000) == 0 && !Tesoro) {
+                                mapa[i][j] = 'T';
+                                tesoroPos = new int[]{j, i};
+                                Tesoro = true;
+                            } else {
+                                mapa[i][j] = '-';
+                            }
+                        }
+                        infDungeon = false;
+                    }
+                    int rX = R.nextInt(1, mapa[0].length - 2);
+                    int rY = R.nextInt(1, mapa.length - 2);
+
+                    mapa[rY][rX] = 'D';
+                    doorPos = new int[]{rX, rY};
+                    if (playerPos != null) mapa[playerPos[1]][playerPos[0]] = 'P';
+                    mapa[enemyPos[1]][enemyPos[0]] = 'E';
+                }
+                int rX = R.nextInt(0, mapa[0].length);
+                int rY = R.nextInt(0, mapa.length);
+
+                try {
+                    while (mapa[rY][rX] == 'X' ||
+                            mapa[rY][rX] == 'T' ||
+                            mapa[rY][rX] == 'D'
+                    ) {
+                        rX = R.nextInt(0, mapa[0].length);
+                        rY = R.nextInt(0, mapa.length);
+                    }
+                } catch (Exception _) {}
+
+                if (enemyPos != null) mapa[enemyPos[1]][enemyPos[0]] = '-';
+                enemyPos = new int[]{rX, rY};
+                mapa[rY][rX] = 'E';
 
                 int width = getWidth() / mapa[0].length;
                 int height = getHeight() / mapa.length;
@@ -62,6 +113,7 @@ public class JuegoProgramacion extends JFrame{
                             case 'P' -> g.setColor(Color.GREEN);
                             case 'T' -> g.setColor(Color.YELLOW);
                             case 'E' -> g.setColor(Color.RED);
+                            case 'D' -> g.setColor(Color.CYAN);
                             default -> g.setColor(Color.BLACK);
                         }
                         g.fillRect(x, y, width, height);
@@ -104,8 +156,7 @@ public class JuegoProgramacion extends JFrame{
                         text2.setBounds(0, 50, 250, 25);
                         text2.setHorizontalAlignment(JLabel.CENTER);
                         win.add(text2);
-                    } else if (playerPos[0] == enemyPos[0] && playerPos[1] == enemyPos[1]) {
-
+                    } else if (enemyPos[0] == playerPos[0] && enemyPos[1] == playerPos[1]) {
                         juego.setVisible(false);
 
                         JFrame dead = new JFrame();
@@ -188,7 +239,6 @@ public class JuegoProgramacion extends JFrame{
                     }
 
                     playerPos = new int[]{x, y};
-
                     mapa[y][x] = 'P';
                     Jugador.setVisible(false);
                     pantalla.repaint();
@@ -215,6 +265,14 @@ public class JuegoProgramacion extends JFrame{
 
         //---------------------------------
         {
+            JLabel infD = new JLabel("Mazmorra Aleatoria");
+            infD.setBounds(10, 25, 200, 20);
+            Tesoro.add(infD);
+
+            JCheckBox autoD = new JCheckBox();
+            autoD.setBounds(170, 25, 20, 20);
+            Tesoro.add(autoD);
+
             JLabel LposX = new JLabel("Coordenada X (1 - " + mapa.length + ")");
             LposX.setBounds(10, 50, 150, 20);
             Tesoro.add(LposX);
@@ -243,6 +301,14 @@ public class JuegoProgramacion extends JFrame{
             anadir.setBackground(Color.GREEN);
             anadir.setBounds(12, 125, 200, 40);
             anadir.addActionListener(_ -> {
+
+                if (autoD.isSelected()) {
+                    infDungeon = true;
+                    Tesoro.setVisible(false);
+                    pantalla.repaint();
+                    return;
+                }
+
                 try {
                     int x = 0, y = 0;
                     if (auto.isSelected()) {
@@ -303,20 +369,6 @@ public class JuegoProgramacion extends JFrame{
                 super.keyPressed(e);
 
                 JFrame help;
-
-                int rX = R.nextInt(0, mapa[0].length);
-                int rY = R.nextInt(0, mapa.length);
-
-                try {
-                    while (mapa[rY][rX] == 'X' || tesoroPos[0] == rX && tesoroPos[1] == rY) {
-                        rX = R.nextInt(0, mapa[0].length);
-                        rY = R.nextInt(0, mapa.length);
-                    }
-                } catch (Exception _) {}
-
-                mapa[enemyPos[1]][enemyPos[0]] = '-';
-                mapa[rY][rX] = 'E';
-                enemyPos = new int[]{rX, rY};
 
                 try {
                     if (e.getKeyCode() == controlKeys[0]) {
