@@ -18,12 +18,12 @@ public class JuegoProgramacion extends JFrame{
     final Random R = new Random();
 
     final char[][] mapa = new char[12][12];
-    final int[] controlKeys = {87, 65, 83, 68};
+    final int[] controlKeys = {87, 65, 83, 68, 73};
     boolean infDungeon = false;
 
+    int[] playerPos =  new int[]{-1, -1};
+    int[] enemyPos = new int[]{-1, -1};
     int[] doorPos;
-    int[] enemyPos;
-    int[] playerPos;
     int[] tesoroPos;
 
     public JuegoProgramacion() {
@@ -50,7 +50,7 @@ public class JuegoProgramacion extends JFrame{
             public void paint(Graphics g){
                 super.paint(g);
 
-                if (playerPos != null && doorPos != null) {
+                if (doorPos != null) {
                     if (playerPos[0] == doorPos[0] && playerPos[1] == doorPos[1]) {
                         infDungeon = true;
                     }
@@ -82,46 +82,71 @@ public class JuegoProgramacion extends JFrame{
 
                     mapa[rY][rX] = 'D';
                     doorPos = new int[]{rX, rY};
-                    if (playerPos != null) mapa[playerPos[1]][playerPos[0]] = 'P';
-                    mapa[enemyPos[1]][enemyPos[0]] = 'E';
+                    if (playerPos[0] != -1 || playerPos[1] != -1) mapa[playerPos[1]][playerPos[0]] = 'P';
                 }
-                int rX = R.nextInt(0, mapa[0].length);
-                int rY = R.nextInt(0, mapa.length);
+                int rX = 0;
+                int rY = 0;
+
+                int pX = playerPos[0];
+                int pY = playerPos[1];
+
+                if (pX == -1 || pY == -1) {
+                    rX = R.nextInt(1, mapa[0].length - 2);
+                    rY = R.nextInt(1, mapa.length - 2);
+                } else {
+                    while (true){
+                        try {
+                            do {
+                                rX = R.nextInt(pX - 2, pX + 3);
+                                rY = R.nextInt(pY - 2, pY + 3);
+                            } while (mapa[rY][rX] != '-');
+                            break;
+                        } catch (Exception _) {}
+                    }
+                }
 
                 try {
-                    while (mapa[rY][rX] == 'X' ||
-                            mapa[rY][rX] == 'T' ||
-                            mapa[rY][rX] == 'D'
-                    ) {
-                        rX = R.nextInt(0, mapa[0].length);
-                        rY = R.nextInt(0, mapa.length);
+                    if (!(playerPos[0] == enemyPos[0] && playerPos[1] == enemyPos[1])) mapa[enemyPos[1]][enemyPos[0]] = '-';
+                    enemyPos[0] = rX;
+                    enemyPos[1] = rY;
+
+                    if (mapa[rY][rX] == 'P'){
+                        juego.setVisible(false);
+
+                        JFrame dead = new JFrame();
+                        dead.setLayout(null);
+                        dead.setBounds(0, 0, 250, 125);
+                        dead.setLocationRelativeTo(null);
+                        dead.setTitle("GAME OVER!");
+                        dead.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                        dead.setVisible(true);
+                        dead.setFocusable(true);
+                        dead.requestFocus();
+                        dead.addKeyListener(new KeyAdapter() {
+                            @Override
+                            public void keyPressed(KeyEvent e) {
+                                super.keyPressed(e);
+
+                                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                                    System.exit(0);
+                                }
+                            }
+                        });
+
+                        JLabel text = new JLabel("¡GAME OVER!");
+                        text.setBounds(0, 20, 250, 25);
+                        text.setHorizontalAlignment(JLabel.CENTER);
+                        dead.add(text);
+
+                        JLabel text2 = new JLabel("¡El Monstruo te ha cazado!");
+                        text2.setBounds(0, 50, 250, 25);
+                        text2.setHorizontalAlignment(JLabel.CENTER);
+                        dead.add(text2);
+                        return;
                     }
+
+                    mapa[rY][rX] = 'E';
                 } catch (Exception _) {}
-
-                if (enemyPos != null) mapa[enemyPos[1]][enemyPos[0]] = '-';
-                enemyPos = new int[]{rX, rY};
-                mapa[rY][rX] = 'E';
-
-                int width = getWidth() / mapa[0].length;
-                int height = getHeight() / mapa.length;
-                int x = 0, y = 0;
-
-                for (int i = 0; i < mapa.length; i++) {
-                    for (int j = 0; j < mapa[i].length; j++) {
-                        switch (mapa[i][j]) {
-                            case 'X' -> g.setColor(Color.GRAY);
-                            case 'P' -> g.setColor(Color.GREEN);
-                            case 'T' -> g.setColor(Color.YELLOW);
-                            case 'E' -> g.setColor(Color.RED);
-                            case 'D' -> g.setColor(Color.CYAN);
-                            default -> g.setColor(Color.BLACK);
-                        }
-                        g.fillRect(x, y, width, height);
-                        x += width;
-                    }
-                    x = 0;
-                    y += height;
-                }
 
                 try {
                     if (playerPos[0] == tesoroPos[0] && playerPos[1] == tesoroPos[1]) {
@@ -156,41 +181,30 @@ public class JuegoProgramacion extends JFrame{
                         text2.setBounds(0, 50, 250, 25);
                         text2.setHorizontalAlignment(JLabel.CENTER);
                         win.add(text2);
-                    } else if (enemyPos[0] == playerPos[0] && enemyPos[1] == playerPos[1]) {
-                        juego.setVisible(false);
-
-                        JFrame dead = new JFrame();
-                        dead.setLayout(null);
-                        dead.setBounds(0, 0, 250, 125);
-                        dead.setLocationRelativeTo(null);
-                        dead.setTitle("Has Ganado!");
-                        dead.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                        dead.setVisible(true);
-                        dead.setFocusable(true);
-                        dead.requestFocus();
-                        dead.addKeyListener(new KeyAdapter() {
-                            @Override
-                            public void keyPressed(KeyEvent e) {
-                                super.keyPressed(e);
-
-                                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                                    System.exit(0);
-                                }
-                            }
-                        });
-
-                        JLabel text = new JLabel("¡GAME OVER!");
-                        text.setBounds(0, 20, 250, 25);
-                        text.setHorizontalAlignment(JLabel.CENTER);
-                        dead.add(text);
-
-                        JLabel text2 = new JLabel("¡El Monstruo te ha cazado!");
-                        text2.setBounds(0, 50, 250, 25);
-                        text2.setHorizontalAlignment(JLabel.CENTER);
-                        dead.add(text2);
+                        return;
                     }
                 } catch (Exception _) {}
 
+                int width = getWidth() / mapa[0].length;
+                int height = getHeight() / mapa.length;
+                int x = 0, y = 0;
+
+                for (int i = 0; i < mapa.length; i++) {
+                    for (int j = 0; j < mapa[i].length; j++) {
+                        switch (mapa[i][j]) {
+                            case 'X' -> g.setColor(Color.GRAY);
+                            case 'P' -> g.setColor(Color.GREEN);
+                            case 'T' -> g.setColor(Color.YELLOW);
+                            case 'E' -> g.setColor(Color.RED);
+                            case 'D' -> g.setColor(Color.CYAN);
+                            default -> g.setColor(Color.BLACK);
+                        }
+                        g.fillRect(x, y, width, height);
+                        x += width;
+                    }
+                    x = 0;
+                    y += height;
+                }
             }
         };
         pantalla.setBounds(0, 0, 500, 500);
@@ -312,7 +326,7 @@ public class JuegoProgramacion extends JFrame{
                 try {
                     int x = 0, y = 0;
                     if (auto.isSelected()) {
-                        if (playerPos != null) {
+                        if (playerPos[0] != -1 && playerPos[1] != -1) {
                             x = mapa[0].length - 1 - playerPos[0];
                             y = mapa.length - 1 - playerPos[1];
                             if (mapa[y][x] == 'X') {
@@ -377,25 +391,29 @@ public class JuegoProgramacion extends JFrame{
                         mapa[playerPos[1] - 1][playerPos[0]] = 'P';
                         mapa[playerPos[1]][playerPos[0]] = '-';
                         playerPos[1] = playerPos[1] - 1;
+                        pantalla.repaint();
                     } else if (e.getKeyCode() == controlKeys[1]) {
                         if (mapa[playerPos[1]][playerPos[0] - 1] == 'X')
                             throw new IllegalArgumentException("El jugador no puede traspasar los muros.");
                         mapa[playerPos[1]][playerPos[0] - 1] = 'P';
                         mapa[playerPos[1]][playerPos[0]] = '-';
                         playerPos[0] = playerPos[0] - 1;
+                        pantalla.repaint();
                     } else if (e.getKeyCode() == controlKeys[2]) {
                         if (mapa[playerPos[1] + 1][playerPos[0]] == 'X')
                             throw new IllegalArgumentException("El jugador no puede traspasar los muros.");
                         mapa[playerPos[1] + 1][playerPos[0]] = 'P';
                         mapa[playerPos[1]][playerPos[0]] = '-';
                         playerPos[1] = playerPos[1] + 1;
+                        pantalla.repaint();
                     } else if (e.getKeyCode() == controlKeys[3]) {
                         if (mapa[playerPos[1]][playerPos[0] + 1] == 'X')
                             throw new IllegalArgumentException("El jugador no puede traspasar los muros.");
                         mapa[playerPos[1]][playerPos[0] + 1] = 'P';
                         mapa[playerPos[1]][playerPos[0]] = '-';
                         playerPos[0] = playerPos[0] + 1;
-                    } else if (e.getKeyChar() == 'i') {
+                        pantalla.repaint();
+                    } else if (e.getKeyCode() == controlKeys[4]) {
                         help = new JFrame("Instrucciones");
                         help.setLayout(new BoxLayout(help.getContentPane(), BoxLayout.X_AXIS));
 
@@ -488,26 +506,33 @@ public class JuegoProgramacion extends JFrame{
                         upKey.setBounds(225, 25, 200, 20);
                         movimiento.add(upKey);
 
-                        JLabel down = new JLabel("Moverse hacia abajo:");
-                        down.setBounds(25, 50, 200, 20);
-                        movimiento.add(down);
-                        JLabel downKey = new JLabel(String.valueOf((char) controlKeys[2]));
-                        downKey.setBounds(225, 50, 200, 20);
-                        movimiento.add(downKey);
-
                         JLabel left = new JLabel("Moverse hacia la izquierda:");
-                        left.setBounds(25, 75, 200, 20);
+                        left.setBounds(25, 45, 200, 20);
                         movimiento.add(left);
                         JLabel leftKey = new JLabel(String.valueOf((char) controlKeys[1]));
-                        leftKey.setBounds(225, 75, 200, 20);
+                        leftKey.setBounds(225, 45, 200, 20);
                         movimiento.add(leftKey);
 
+                        JLabel down = new JLabel("Moverse hacia abajo:");
+                        down.setBounds(25, 65, 200, 20);
+                        movimiento.add(down);
+                        JLabel downKey = new JLabel(String.valueOf((char) controlKeys[2]));
+                        downKey.setBounds(225, 65, 200, 20);
+                        movimiento.add(downKey);
+
                         JLabel right = new JLabel("Moverse hacia la derecha:");
-                        right.setBounds(25, 100, 200, 20);
+                        right.setBounds(25, 85, 200, 20);
                         movimiento.add(right);
                         JLabel rightKey = new JLabel(String.valueOf((char) controlKeys[3]));
-                        rightKey.setBounds(225, 100, 200, 20);
+                        rightKey.setBounds(225, 85, 200, 20);
                         movimiento.add(rightKey);
+
+                        JLabel inf = new JLabel("Abrir panel de informacion:");
+                        inf.setBounds(25, 105, 200, 20);
+                        movimiento.add(inf);
+                        JLabel infKey = new JLabel(String.valueOf((char) controlKeys[4]));
+                        infKey.setBounds(225, 105, 200, 20);
+                        movimiento.add(infKey);
 
                         //---------------------------------
 
@@ -525,13 +550,14 @@ public class JuegoProgramacion extends JFrame{
 
                         //---------------------------------
                         {
-                            JPanel[] controlKeyPanels = new JPanel[4];
+                            JPanel[] controlKeyPanels = new JPanel[5];
                             for (int i = 0; i < controlKeyPanels.length; i++) {
-                                String direccion = switch (i) {
+                                String texto = switch (i) {
                                     case 0 -> "Up";
                                     case 1 -> "Left";
                                     case 2 -> "Down";
                                     case 3 -> "Right";
+                                    case 4 -> "Informacion";
                                     default -> throw new IllegalStateException("Unexpected value: " + i);
                                 };
 
@@ -539,17 +565,17 @@ public class JuegoProgramacion extends JFrame{
                                 controlKeyPanels[i].setLayout(new GridBagLayout());
                                 controlKeyPanels[i].setBorder(BorderFactory.createTitledBorder(
                                         BorderFactory.createLineBorder(Color.GRAY),
-                                        direccion, 0, TitledBorder.DEFAULT_POSITION,
+                                        texto, 0, TitledBorder.DEFAULT_POSITION,
                                         new Font("Arial", Font.BOLD, 15), Color.BLACK)
                                 );
                                 controles.add(controlKeyPanels[i]);
 
                                 int finalI = i;
-                                JButton changeControls = new JButton("Cambiar tecla de movimiento '" + direccion + "'");
+                                JButton changeControls = new JButton("Cambiar tecla de movimiento '" + texto + "'");
                                 changeControls.setBackground(Color.GREEN);
                                 changeControls.addActionListener(_ -> {
-                                    JFrame changeKeyFrame = new JFrame("Cambiar tecla de movimiento '" + direccion + "'");
-                                    changeKeyFrame.setBounds(0, 0, 250, 125);
+                                    JFrame changeKeyFrame = new JFrame("Cambiar tecla de movimiento '" + texto + "'");
+                                    changeKeyFrame.setBounds(0, 0, 400, 150);
                                     changeKeyFrame.setResizable(false);
                                     changeKeyFrame.setLocationRelativeTo(null);
                                     changeKeyFrame.setVisible(true);
@@ -560,19 +586,62 @@ public class JuegoProgramacion extends JFrame{
                                         public void keyPressed(KeyEvent e) {
                                             super.keyPressed(e);
                                             controlKeys[finalI] = e.getKeyCode();
-                                            switch (direccion) {
-                                                case "Up" -> upKey.setText(String.valueOf((char) controlKeys[0]));
-                                                case "Left" -> leftKey.setText(String.valueOf((char) controlKeys[1]));
-                                                case "Down" -> downKey.setText(String.valueOf((char) controlKeys[2]));
-                                                case "Right" -> rightKey.setText(String.valueOf((char) controlKeys[3]));
+                                            switch (texto) {
+                                                //↑↓←→
+                                                case "Up" -> {
+                                                    switch (controlKeys[0]) {
+                                                        case 38 -> upKey.setText("↑");
+                                                        case 37 -> upKey.setText("←");
+                                                        case 40 -> upKey.setText("↓");
+                                                        case 39 -> upKey.setText("→");
+                                                        default -> upKey.setText(String.valueOf((char) controlKeys[0]));
+                                                    }
+                                                }
+                                                case "Left" -> {
+                                                    switch (controlKeys[1]) {
+                                                        case 38 -> leftKey.setText("↑");
+                                                        case 37 -> leftKey.setText("←");
+                                                        case 40 -> leftKey.setText("↓");
+                                                        case 39 -> leftKey.setText("→");
+                                                        default -> leftKey.setText(String.valueOf((char) controlKeys[1]));
+                                                    }
+                                                }
+                                                case "Down" -> {
+                                                    switch (controlKeys[2]) {
+                                                        case 38 -> downKey.setText("↑");
+                                                        case 37 -> downKey.setText("←");
+                                                        case 40 -> downKey.setText("↓");
+                                                        case 39 -> downKey.setText("→");
+                                                        default -> downKey.setText(String.valueOf((char) controlKeys[2]));
+                                                    }
+                                                }
+                                                case "Right" -> {
+                                                    switch (controlKeys[3]) {
+                                                        case 38 -> rightKey.setText("↑");
+                                                        case 37 -> rightKey.setText("←");
+                                                        case 40 -> rightKey.setText("↓");
+                                                        case 39 -> rightKey.setText("→");
+                                                        default -> rightKey.setText(String.valueOf((char) controlKeys[3]));
+                                                    }
+                                                }
+                                                case "Informacion" -> {
+                                                    switch (controlKeys[4]) {
+                                                        case 38 -> infKey.setText("↑");
+                                                        case 37 -> infKey.setText("←");
+                                                        case 40 -> infKey.setText("↓");
+                                                        case 39 -> infKey.setText("→");
+                                                        default -> infKey.setText(String.valueOf((char) controlKeys[4]));
+                                                    }
+                                                }
                                             }
                                             changeKeyFrame.setVisible(false);
                                             changeKeyFrame.dispose();
                                         }
                                     });
 
-                                    JLabel text = new JLabel("Presiona la tecla que desees asignar a '" + direccion + "'.");
+                                    JLabel text = new JLabel("Presiona la tecla que desees asignar a '" + texto + "'.");
                                     text.setBounds(10, 10, 230, 25);
+                                    text.setHorizontalAlignment(JLabel.CENTER);
                                     changeKeyFrame.add(text);
                                 });
                                 controlKeyPanels[i].add(changeControls);
@@ -590,7 +659,6 @@ public class JuegoProgramacion extends JFrame{
                 } catch (IllegalArgumentException ex) {
                     System.err.println("ERROR: " + ex.getMessage());
                 }
-                pantalla.repaint();
             }
         });
 
