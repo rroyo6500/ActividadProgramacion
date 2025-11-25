@@ -17,12 +17,13 @@ public class JuegoProgramacion extends JFrame{
 
     final Random R = new Random();
 
-    final char[][] mapa = new char[12][12];
+    char[][] mapa = new char[12][12];
     final int[] controlKeys = {87, 65, 83, 68, 73};
     boolean infDungeon = false;
 
-    int[] playerPos =  new int[]{-1, -1};
-    int[] enemyPos = new int[]{-1, -1};
+    int vidaJugador = 100;
+    int[] playerPos = new int[]{-1, -1};
+    int[] enemyPos;
     int[] doorPos;
     int[] tesoroPos;
 
@@ -40,7 +41,7 @@ public class JuegoProgramacion extends JFrame{
                 if (r == 0) {
                     mapa[i][j] = 'X';
                 } else {
-                    mapa[i][j] = '-';
+                    mapa[i][j] = ' ';
                 }
             }
         }
@@ -50,39 +51,99 @@ public class JuegoProgramacion extends JFrame{
             public void paint(Graphics g){
                 super.paint(g);
 
+                if (vidaJugador <= 0) {
+                    juego.setVisible(false);
+
+                    JFrame dead = new JFrame();
+                    dead.setLayout(null);
+                    dead.setBounds(0, 0, 250, 125);
+                    dead.setLocationRelativeTo(null);
+                    dead.setTitle("GAME OVER!");
+                    dead.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    dead.setVisible(true);
+                    dead.setFocusable(true);
+                    dead.requestFocus();
+                    dead.addKeyListener(new KeyAdapter() {
+                        @Override
+                        public void keyPressed(KeyEvent e) {
+                            super.keyPressed(e);
+
+                            if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                                System.exit(0);
+                            }
+                        }
+                    });
+
+                    JLabel text = new JLabel("¡GAME OVER!");
+                    text.setBounds(0, 20, 250, 25);
+                    text.setHorizontalAlignment(JLabel.CENTER);
+                    dead.add(text);
+
+                    JLabel text2 = new JLabel("¡El Monstruo te ha cazado!");
+                    text2.setBounds(0, 50, 250, 25);
+                    text2.setHorizontalAlignment(JLabel.CENTER);
+                    dead.add(text2);
+                    return;
+                }
+
                 if (doorPos != null) {
                     if (playerPos[0] == doorPos[0] && playerPos[1] == doorPos[1]) {
                         infDungeon = true;
                     }
                 }
                 if (infDungeon) {
-                    boolean Tesoro = false;
-                    tesoroPos = null;
+                    int tmpLengthX = mapa[0].length;
+                    int tmpLengthY = mapa.length;
+
+                    int rSala = R.nextInt(0, salas.length);
+                    mapa = new char[salas[rSala].length][salas[rSala][0].length];
+                    for (int i = 0; i < mapa.length; i++) {
+                        System.arraycopy(salas[rSala][i], 0, mapa[i], 0, mapa[i].length);
+                    }
+
+                    doorPos = null;
+                    enemyPos = null;
                     for (int i = 0; i < mapa.length; i++) {
                         for (int j = 0; j < mapa[i].length; j++) {
-                            if (i == 0 || i == mapa.length - 1 || j == 0 || j == mapa[i].length - 1) {
-                                mapa[i][j] = 'X';
-                                continue;
-                            }
-                            int r = R.nextInt(0, (int) mapa.length / 2);
-                            if (r == 0) {
-                                mapa[i][j] = 'X';
-                            } else if (R.nextInt(0, 1000) == 0 && !Tesoro) {
-                                mapa[i][j] = 'T';
-                                tesoroPos = new int[]{j, i};
-                                Tesoro = true;
-                            } else {
-                                mapa[i][j] = '-';
+                            switch (mapa[i][j]) {
+                                case 'T' -> tesoroPos = new int[]{j, i};
+                                case 'D' -> doorPos = new int[]{j, i};
+                                case 'E' -> enemyPos = new int[]{j, i};
                             }
                         }
-                        infDungeon = false;
                     }
-                    int rX = R.nextInt(1, mapa[0].length - 2);
-                    int rY = R.nextInt(1, mapa.length - 2);
 
-                    mapa[rY][rX] = 'D';
-                    doorPos = new int[]{rX, rY};
-                    if (playerPos[0] != -1 || playerPos[1] != -1) mapa[playerPos[1]][playerPos[0]] = 'P';
+                    try {
+                        if (playerPos[1] == 0) {
+                            playerPos[0] = mapa[0].length / 2;
+                            playerPos[1] = mapa.length - 1;
+                        } else if (playerPos[1] == tmpLengthY - 1) {
+                            playerPos[0] = mapa[0].length / 2;
+                            playerPos[1] = 0;
+                        } else if (playerPos[0] == 0) {
+                            playerPos[0] = mapa[0].length - 1;
+                            playerPos[1] = mapa.length / 2;
+                        } else if (playerPos[0] == tmpLengthX - 1) {
+                            playerPos[0] = 0;
+                            playerPos[1] = mapa.length / 2;
+                        }
+                        mapa[playerPos[1]][playerPos[0]] = 'P';
+
+                        if (doorPos != null) {
+                            while (playerPos[0] == doorPos[0] && playerPos[1] == doorPos[1]) {
+                                doorPos = switch (R.nextInt(0, 4)) {
+                                    case 0 -> new int[]{0, (mapa.length / 2)};
+                                    case 1 -> new int[]{mapa[0].length - 1, (mapa.length / 2)};
+                                    case 2 -> new int[]{(mapa[0].length / 2), 0};
+                                    case 3 -> new int[]{(mapa[0].length / 2), mapa.length - 1};
+                                    default -> throw new IllegalArgumentException("Opcion no esperada.");
+                                };
+                            }
+                            mapa[doorPos[1]][doorPos[0]] = 'D';
+                        }
+                    } catch (Exception _) {}
+
+                    infDungeon = false;
                 }
                 int rX = 0;
                 int rY = 0;
@@ -90,63 +151,115 @@ public class JuegoProgramacion extends JFrame{
                 int pX = playerPos[0];
                 int pY = playerPos[1];
 
-                if (pX == -1 || pY == -1) {
-                    rX = R.nextInt(1, mapa[0].length - 2);
-                    rY = R.nextInt(1, mapa.length - 2);
-                } else {
+                if ((pX != -1 && pY != -1) && enemyPos != null) {
                     while (true){
                         try {
                             do {
-                                rX = R.nextInt(pX - 2, pX + 3);
-                                rY = R.nextInt(pY - 2, pY + 3);
-                            } while (mapa[rY][rX] != '-');
+                                rX = R.nextInt(pX - 3, pX + 4);
+                                rY = R.nextInt(pY - 3, pY + 4);
+                            } while (mapa[rY][rX] != ' ' && mapa[rY][rX] != 'P');
                             break;
                         } catch (Exception _) {}
                     }
-                }
-
-                try {
-                    if (!(playerPos[0] == enemyPos[0] && playerPos[1] == enemyPos[1])) mapa[enemyPos[1]][enemyPos[0]] = '-';
-                    enemyPos[0] = rX;
-                    enemyPos[1] = rY;
 
                     if (mapa[rY][rX] == 'P'){
                         juego.setVisible(false);
 
-                        JFrame dead = new JFrame();
-                        dead.setLayout(null);
-                        dead.setBounds(0, 0, 250, 125);
-                        dead.setLocationRelativeTo(null);
-                        dead.setTitle("GAME OVER!");
-                        dead.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                        dead.setVisible(true);
-                        dead.setFocusable(true);
-                        dead.requestFocus();
-                        dead.addKeyListener(new KeyAdapter() {
-                            @Override
-                            public void keyPressed(KeyEvent e) {
-                                super.keyPressed(e);
+                        int vidaEnemigo = 100;
+                        int danoEnemigo = R.nextInt(0, 51);
 
-                                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                                    System.exit(0);
-                                }
-                            }
-                        });
+                        JFrame combate = new JFrame("Combate");
+                        combate.setLayout(new BoxLayout(combate.getContentPane(), BoxLayout.Y_AXIS));
+                        combate.setBounds(0, 0, 250, 500);
 
-                        JLabel text = new JLabel("¡GAME OVER!");
-                        text.setBounds(0, 20, 250, 25);
-                        text.setHorizontalAlignment(JLabel.CENTER);
-                        dead.add(text);
 
-                        JLabel text2 = new JLabel("¡El Monstruo te ha cazado!");
-                        text2.setBounds(0, 50, 250, 25);
-                        text2.setHorizontalAlignment(JLabel.CENTER);
-                        dead.add(text2);
-                        return;
+                        JPanel enemyPanel = new JPanel();
+                        enemyPanel.setLayout(new GridBagLayout());
+                        enemyPanel.setMinimumSize(new Dimension(250, 100));
+                        enemyPanel.setMaximumSize(new Dimension(250, 100));
+                        enemyPanel.setPreferredSize(new Dimension(250, 100));
+                        enemyPanel.setBorder(BorderFactory.createTitledBorder(
+                                BorderFactory.createLineBorder(Color.BLACK),
+                                "Enemigo", 0, TitledBorder.DEFAULT_POSITION,
+                                new Font("Arial", Font.BOLD, 15), Color.BLACK)
+                        );
+                        combate.add(enemyPanel);
+                        {
+                            JLabel life = new JLabel();
+                            life.setText("Vida: " + vidaEnemigo);
+                            life.setBounds(10, 40, 125, 20);
+                            enemyPanel.add(life);
+
+                            JLabel label = new JLabel("        ");
+                            enemyPanel.add(label);
+
+                            JLabel dano = new JLabel();
+                            dano.setText("Daño: " + danoEnemigo);
+                            dano.setBounds(135, 40, 125, 20);
+                            enemyPanel.add(dano);
+                        }
+
+                        JPanel playerPanel = new JPanel();
+                        playerPanel.setLayout(new BoxLayout(playerPanel, BoxLayout.Y_AXIS));
+                        playerPanel.setMinimumSize(new Dimension(250, 350));
+                        playerPanel.setMaximumSize(new Dimension(250, 350));
+                        playerPanel.setPreferredSize(new Dimension(250, 350));
+                        playerPanel.setBorder(BorderFactory.createTitledBorder(
+                                BorderFactory.createLineBorder(Color.BLACK),
+                                "Jugador", 0, TitledBorder.DEFAULT_POSITION,
+                                new Font("Arial", Font.BOLD, 15), Color.BLACK)
+                        );
+                        combate.add(playerPanel);
+                        {
+                            JPanel panelVida = new JPanel();
+                            panelVida.setLayout(new GridBagLayout());
+                            panelVida.setMinimumSize(new Dimension(250, 50));
+                            panelVida.setMaximumSize(new Dimension(250, 50));
+                            panelVida.setPreferredSize(new Dimension(250, 50));
+                            panelVida.setBorder(BorderFactory.createTitledBorder(
+                                    BorderFactory.createLineBorder(Color.BLACK),
+                                    "Vida", 0, TitledBorder.DEFAULT_POSITION,
+                                    new Font("Arial", Font.BOLD, 15), Color.BLACK)
+                            );
+                            playerPanel.add(panelVida);
+
+                            JLabel life = new JLabel();
+                            life.setText(String.valueOf(vidaJugador));
+                            panelVida.add(life);
+
+                            JPanel panelOpcionesAtaque = new JPanel();
+                            panelOpcionesAtaque.setLayout(new BoxLayout(panelOpcionesAtaque, BoxLayout.Y_AXIS));
+                            panelOpcionesAtaque.setBorder(BorderFactory.createTitledBorder(
+                                    BorderFactory.createLineBorder(Color.BLACK),
+                                    "Opciones de Ataque", 0, TitledBorder.DEFAULT_POSITION,
+                                    new Font("Arial", Font.BOLD, 15), Color.BLACK)
+                            );
+                            playerPanel.add(panelOpcionesAtaque);
+
+                            JButton atacar = new JButton("Atacar");
+                            panelOpcionesAtaque.add(atacar);
+
+                            JButton defender = new JButton("Defender");
+                            panelOpcionesAtaque.add(defender);
+
+                            JButton huir = new JButton("Huir");
+                            panelOpcionesAtaque.add(huir);
+
+                        }
+
+                        combate.setVisible(true);
+                        combate.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                        combate.setResizable(false);
+                        combate.setLocationRelativeTo(null);
                     }
 
-                    mapa[rY][rX] = 'E';
-                } catch (Exception _) {}
+                    try {
+                        if (!(playerPos[0] == enemyPos[0] && playerPos[1] == enemyPos[1])) mapa[enemyPos[1]][enemyPos[0]] = ' ';
+                        enemyPos[0] = rX;
+                        enemyPos[1] = rY;
+                        mapa[rY][rX] = 'E';
+                    } catch (Exception _) {}
+                }
 
                 try {
                     if (playerPos[0] == tesoroPos[0] && playerPos[1] == tesoroPos[1]) {
@@ -369,6 +482,249 @@ public class JuegoProgramacion extends JFrame{
         }
         //---------------------------------
 
+        JFrame help = new JFrame();
+        help.setLayout(new BoxLayout(help.getContentPane(), BoxLayout.X_AXIS));
+        JPanel informacionBasica = new JPanel();
+        informacionBasica.setLayout(null);
+        informacionBasica.setMinimumSize(new Dimension(500, 800));
+        informacionBasica.setMaximumSize(new Dimension(500, 800));
+        informacionBasica.setPreferredSize(new Dimension(500, 800));
+        informacionBasica.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.BLACK),
+                "Informacion Basica", 0, TitledBorder.DEFAULT_POSITION,
+                new Font("Arial", Font.BOLD, 15), Color.BLACK)
+        );
+        help.add(informacionBasica);
+        //---------------------------------
+        {
+            JLabel pTitle = new JLabel("Como añadir al Jugador:");
+            pTitle.setBounds(8, 20, 480, 25);
+            pTitle.setFont(new Font("Arial", Font.BOLD, 15));
+            informacionBasica.add(pTitle);
+
+            JLabel[] pText = {
+                    new JLabel("1. Añade la posicion X"),
+                    new JLabel("2. Añade la posicion Y"),
+                    new JLabel("3. Pulsa el boton de 'Añadir Jugador'")
+            };
+            for (int i = 0; i < pText.length; i++) {
+                pText[i].setBounds(25, (65 + (i * 20)), 250, 20);
+                informacionBasica.add(pText[i]);
+            }
+            ImageIcon instPlayer = new ImageIcon(path + "\\Imagenes\\InstPlayer.png");
+            Image instPlayerImg = instPlayer.getImage().getScaledInstance(160, 120, Image.SCALE_SMOOTH);
+            JLabel pImg = new JLabel(new ImageIcon(instPlayerImg));
+            pImg.setBounds(300, 20, 160, 120);
+            informacionBasica.add(pImg);
+        }
+        {
+            JLabel pTesoro = new JLabel("Como añadir el Tesoro:");
+            pTesoro.setBounds(8, 150, 480, 25);
+            pTesoro.setFont(new Font("Arial", Font.BOLD, 15));
+            informacionBasica.add(pTesoro);
+
+            JLabel[] pText = {
+                    new JLabel("1. Añade la posicion X"),
+                    new JLabel("2. Añade la posicion Y"),
+                    new JLabel("3. Pulsa el boton de 'Añadir Tesoro'")
+            };
+            for (int i = 0; i < pText.length; i++) {
+                pText[i].setBounds(25, (195 + (i * 20)), 250, 20);
+                informacionBasica.add(pText[i]);
+            }
+            ImageIcon instTesoro = new ImageIcon(path + "\\Imagenes\\InstTesoro.png");
+            Image instTesoroImg = instTesoro.getImage().getScaledInstance(160, 120, Image.SCALE_SMOOTH);
+            JLabel pImg = new JLabel(new ImageIcon(instTesoroImg));
+            pImg.setBounds(300, 150, 160, 120);
+            informacionBasica.add(pImg);
+        }
+        {
+            JLabel coordenadas = new JLabel("Coordenadas:");
+            coordenadas.setBounds(8, 275, 480, 25);
+            coordenadas.setFont(new Font("Arial", Font.BOLD, 15));
+            informacionBasica.add(coordenadas);
+
+            ImageIcon imgCoordenadas = new ImageIcon(path + "\\Imagenes\\Pantalla.png");
+            JLabel pImg = new JLabel(imgCoordenadas);
+            pImg.setBounds(100, 350, 300, 300);
+            informacionBasica.add(pImg);
+        }
+        //---------------------------------
+        JPanel rightPart = new JPanel();
+        rightPart.setLayout(new BoxLayout(rightPart, BoxLayout.Y_AXIS));
+        help.add(rightPart);
+
+        JPanel movimiento = new JPanel();
+        movimiento.setLayout(null);
+        movimiento.setMinimumSize(new Dimension(480, 150));
+        movimiento.setMaximumSize(new Dimension(480, 150));
+        movimiento.setPreferredSize(new Dimension(480, 150));
+        movimiento.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.BLACK),
+                "Movimiento", 0, TitledBorder.DEFAULT_POSITION,
+                new Font("Arial", Font.BOLD, 15), Color.BLACK)
+        );
+        rightPart.add(movimiento);
+        //---------------------------------
+        JLabel up = new JLabel("Moverse hacia arriba:");
+        up.setBounds(25, 25, 200, 20);
+        movimiento.add(up);
+        JLabel upKey = new JLabel(String.valueOf((char) controlKeys[0]));
+        upKey.setBounds(225, 25, 200, 20);
+        movimiento.add(upKey);
+
+        JLabel left = new JLabel("Moverse hacia la izquierda:");
+        left.setBounds(25, 45, 200, 20);
+        movimiento.add(left);
+        JLabel leftKey = new JLabel(String.valueOf((char) controlKeys[1]));
+        leftKey.setBounds(225, 45, 200, 20);
+        movimiento.add(leftKey);
+
+        JLabel down = new JLabel("Moverse hacia abajo:");
+        down.setBounds(25, 65, 200, 20);
+        movimiento.add(down);
+        JLabel downKey = new JLabel(String.valueOf((char) controlKeys[2]));
+        downKey.setBounds(225, 65, 200, 20);
+        movimiento.add(downKey);
+
+        JLabel right = new JLabel("Moverse hacia la derecha:");
+        right.setBounds(25, 85, 200, 20);
+        movimiento.add(right);
+        JLabel rightKey = new JLabel(String.valueOf((char) controlKeys[3]));
+        rightKey.setBounds(225, 85, 200, 20);
+        movimiento.add(rightKey);
+
+        JLabel inf = new JLabel("Abrir panel de informacion:");
+        inf.setBounds(25, 105, 200, 20);
+        movimiento.add(inf);
+        JLabel infKey = new JLabel(String.valueOf((char) controlKeys[4]));
+        infKey.setBounds(225, 105, 200, 20);
+        movimiento.add(infKey);
+
+        //---------------------------------
+
+        JPanel controles = new JPanel();
+        controles.setLayout(new BoxLayout(controles, BoxLayout.Y_AXIS));
+        controles.setMinimumSize(new Dimension(480, 610));
+        controles.setMaximumSize(new Dimension(480, 610));
+        controles.setPreferredSize(new Dimension(480, 610));
+        controles.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.BLACK),
+                "Controles", 0, TitledBorder.DEFAULT_POSITION,
+                new Font("Arial", Font.BOLD, 15), Color.BLACK)
+        );
+        rightPart.add(controles);
+
+        //---------------------------------
+        {
+            JPanel[] controlKeyPanels = new JPanel[5];
+            for (int i = 0; i < controlKeyPanels.length; i++) {
+                String texto = switch (i) {
+                    case 0 -> "Up";
+                    case 1 -> "Left";
+                    case 2 -> "Down";
+                    case 3 -> "Right";
+                    case 4 -> "Informacion";
+                    default -> throw new IllegalStateException("Unexpected value: " + i);
+                };
+
+                controlKeyPanels[i] = new JPanel();
+                controlKeyPanels[i].setLayout(new GridBagLayout());
+                controlKeyPanels[i].setBorder(BorderFactory.createTitledBorder(
+                        BorderFactory.createLineBorder(Color.GRAY),
+                        texto, 0, TitledBorder.DEFAULT_POSITION,
+                        new Font("Arial", Font.BOLD, 15), Color.BLACK)
+                );
+                controles.add(controlKeyPanels[i]);
+
+                int finalI = i;
+                JButton changeControls = new JButton("Cambiar tecla de movimiento '" + texto + "'");
+                changeControls.setBackground(Color.GREEN);
+                changeControls.addActionListener(_ -> {
+                    JFrame changeKeyFrame = new JFrame("Cambiar tecla de movimiento '" + texto + "'");
+                    changeKeyFrame.setBounds(0, 0, 400, 150);
+                    changeKeyFrame.setResizable(false);
+                    changeKeyFrame.setLocationRelativeTo(null);
+                    changeKeyFrame.setVisible(true);
+                    changeKeyFrame.setFocusable(true);
+                    changeKeyFrame.requestFocus();
+                    changeKeyFrame.addKeyListener(new KeyAdapter() {
+                        @Override
+                        public void keyPressed(KeyEvent e) {
+                            super.keyPressed(e);
+                            controlKeys[finalI] = e.getKeyCode();
+                            switch (texto) {
+                                //↑↓←→
+                                case "Up" -> {
+                                    switch (controlKeys[0]) {
+                                        case 38 -> upKey.setText("↑");
+                                        case 37 -> upKey.setText("←");
+                                        case 40 -> upKey.setText("↓");
+                                        case 39 -> upKey.setText("→");
+                                        default -> upKey.setText(String.valueOf((char) controlKeys[0]));
+                                    }
+                                }
+                                case "Left" -> {
+                                    switch (controlKeys[1]) {
+                                        case 38 -> leftKey.setText("↑");
+                                        case 37 -> leftKey.setText("←");
+                                        case 40 -> leftKey.setText("↓");
+                                        case 39 -> leftKey.setText("→");
+                                        default -> leftKey.setText(String.valueOf((char) controlKeys[1]));
+                                    }
+                                }
+                                case "Down" -> {
+                                    switch (controlKeys[2]) {
+                                        case 38 -> downKey.setText("↑");
+                                        case 37 -> downKey.setText("←");
+                                        case 40 -> downKey.setText("↓");
+                                        case 39 -> downKey.setText("→");
+                                        default -> downKey.setText(String.valueOf((char) controlKeys[2]));
+                                    }
+                                }
+                                case "Right" -> {
+                                    switch (controlKeys[3]) {
+                                        case 38 -> rightKey.setText("↑");
+                                        case 37 -> rightKey.setText("←");
+                                        case 40 -> rightKey.setText("↓");
+                                        case 39 -> rightKey.setText("→");
+                                        default -> rightKey.setText(String.valueOf((char) controlKeys[3]));
+                                    }
+                                }
+                                case "Informacion" -> {
+                                    switch (controlKeys[4]) {
+                                        case 38 -> infKey.setText("↑");
+                                        case 37 -> infKey.setText("←");
+                                        case 40 -> infKey.setText("↓");
+                                        case 39 -> infKey.setText("→");
+                                        default -> infKey.setText(String.valueOf((char) controlKeys[4]));
+                                    }
+                                }
+                            }
+                            changeKeyFrame.setVisible(false);
+                            changeKeyFrame.dispose();
+                        }
+                    });
+
+                    JLabel text = new JLabel("Presiona la tecla que desees asignar a '" + texto + "'.");
+                    text.setBounds(10, 10, 230, 25);
+                    text.setHorizontalAlignment(JLabel.CENTER);
+                    changeKeyFrame.add(text);
+                });
+                controlKeyPanels[i].add(changeControls);
+
+            }
+        }
+        //---------------------------------
+
+        help.setBounds(0, 0, 1000, 800);
+        help.setResizable(false);
+        help.setLocationRelativeTo(null);
+        help.setVisible(true);
+        help.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        // ---------------------------------
+
         setTitle("Encuentra el tesoro");
         setBounds(0, 0, 515, 750);
         setResizable(false);
@@ -382,289 +738,135 @@ public class JuegoProgramacion extends JFrame{
             public void keyPressed(KeyEvent e) {
                 super.keyPressed(e);
 
-                JFrame help;
-
                 try {
                     if (e.getKeyCode() == controlKeys[0]) {
                         if (mapa[playerPos[1] - 1][playerPos[0]] == 'X')
                             throw new IllegalArgumentException("El jugador no puede traspasar los muros.");
                         mapa[playerPos[1] - 1][playerPos[0]] = 'P';
-                        mapa[playerPos[1]][playerPos[0]] = '-';
+                        mapa[playerPos[1]][playerPos[0]] = ' ';
                         playerPos[1] = playerPos[1] - 1;
                         pantalla.repaint();
                     } else if (e.getKeyCode() == controlKeys[1]) {
                         if (mapa[playerPos[1]][playerPos[0] - 1] == 'X')
                             throw new IllegalArgumentException("El jugador no puede traspasar los muros.");
                         mapa[playerPos[1]][playerPos[0] - 1] = 'P';
-                        mapa[playerPos[1]][playerPos[0]] = '-';
+                        mapa[playerPos[1]][playerPos[0]] = ' ';
                         playerPos[0] = playerPos[0] - 1;
                         pantalla.repaint();
                     } else if (e.getKeyCode() == controlKeys[2]) {
                         if (mapa[playerPos[1] + 1][playerPos[0]] == 'X')
                             throw new IllegalArgumentException("El jugador no puede traspasar los muros.");
                         mapa[playerPos[1] + 1][playerPos[0]] = 'P';
-                        mapa[playerPos[1]][playerPos[0]] = '-';
+                        mapa[playerPos[1]][playerPos[0]] = ' ';
                         playerPos[1] = playerPos[1] + 1;
                         pantalla.repaint();
                     } else if (e.getKeyCode() == controlKeys[3]) {
                         if (mapa[playerPos[1]][playerPos[0] + 1] == 'X')
                             throw new IllegalArgumentException("El jugador no puede traspasar los muros.");
                         mapa[playerPos[1]][playerPos[0] + 1] = 'P';
-                        mapa[playerPos[1]][playerPos[0]] = '-';
+                        mapa[playerPos[1]][playerPos[0]] = ' ';
                         playerPos[0] = playerPos[0] + 1;
                         pantalla.repaint();
                     } else if (e.getKeyCode() == controlKeys[4]) {
-                        help = new JFrame("Instrucciones");
-                        help.setLayout(new BoxLayout(help.getContentPane(), BoxLayout.X_AXIS));
-
-                        JPanel informacionBasica = new JPanel();
-                        informacionBasica.setLayout(null);
-                        informacionBasica.setMinimumSize(new Dimension(500, 800));
-                        informacionBasica.setMaximumSize(new Dimension(500, 800));
-                        informacionBasica.setPreferredSize(new Dimension(500, 800));
-                        informacionBasica.setBorder(BorderFactory.createTitledBorder(
-                                BorderFactory.createLineBorder(Color.BLACK),
-                                "Informacion Basica", 0, TitledBorder.DEFAULT_POSITION,
-                                new Font("Arial", Font.BOLD, 15), Color.BLACK)
-                        );
-                        help.add(informacionBasica);
-                        //---------------------------------
-                        {
-                            JLabel pTitle = new JLabel("Como añadir al Jugador:");
-                            pTitle.setBounds(8, 20, 480, 25);
-                            pTitle.setFont(new Font("Arial", Font.BOLD, 15));
-                            informacionBasica.add(pTitle);
-
-                            JLabel[] pText = {
-                                    new JLabel("1. Añade la posicion X"),
-                                    new JLabel("2. Añade la posicion Y"),
-                                    new JLabel("3. Pulsa el boton de 'Añadir Jugador'")
-                            };
-                            for (int i = 0; i < pText.length; i++) {
-                                pText[i].setBounds(25, (65 + (i * 20)), 250, 20);
-                                informacionBasica.add(pText[i]);
-                            }
-                            ImageIcon instPlayer = new ImageIcon(path + "\\Imagenes\\InstPlayer.png");
-                            Image instPlayerImg = instPlayer.getImage().getScaledInstance(160, 120, Image.SCALE_SMOOTH);
-                            JLabel pImg = new JLabel(new ImageIcon(instPlayerImg));
-                            pImg.setBounds(300, 20, 160, 120);
-                            informacionBasica.add(pImg);
-                        }
-                        {
-                            JLabel pTesoro = new JLabel("Como añadir el Tesoro:");
-                            pTesoro.setBounds(8, 150, 480, 25);
-                            pTesoro.setFont(new Font("Arial", Font.BOLD, 15));
-                            informacionBasica.add(pTesoro);
-
-                            JLabel[] pText = {
-                                    new JLabel("1. Añade la posicion X"),
-                                    new JLabel("2. Añade la posicion Y"),
-                                    new JLabel("3. Pulsa el boton de 'Añadir Tesoro'")
-                            };
-                            for (int i = 0; i < pText.length; i++) {
-                                pText[i].setBounds(25, (195 + (i * 20)), 250, 20);
-                                informacionBasica.add(pText[i]);
-                            }
-                            ImageIcon instTesoro = new ImageIcon(path + "\\Imagenes\\InstTesoro.png");
-                            Image instTesoroImg = instTesoro.getImage().getScaledInstance(160, 120, Image.SCALE_SMOOTH);
-                            JLabel pImg = new JLabel(new ImageIcon(instTesoroImg));
-                            pImg.setBounds(300, 150, 160, 120);
-                            informacionBasica.add(pImg);
-                        }
-                        {
-                            JLabel coordenadas = new JLabel("Coordenadas:");
-                            coordenadas.setBounds(8, 275, 480, 25);
-                            coordenadas.setFont(new Font("Arial", Font.BOLD, 15));
-                            informacionBasica.add(coordenadas);
-
-                            ImageIcon imgCoordenadas = new ImageIcon(path + "\\Imagenes\\Pantalla.png");
-                            JLabel pImg = new JLabel(imgCoordenadas);
-                            pImg.setBounds(100, 350, 300, 300);
-                            informacionBasica.add(pImg);
-                        }
-                        //---------------------------------
-                        JPanel rightPart = new JPanel();
-                        rightPart.setLayout(new BoxLayout(rightPart, BoxLayout.Y_AXIS));
-                        help.add(rightPart);
-
-                        JPanel movimiento = new JPanel();
-                        movimiento.setLayout(null);
-                        movimiento.setMinimumSize(new Dimension(480, 150));
-                        movimiento.setMaximumSize(new Dimension(480, 150));
-                        movimiento.setPreferredSize(new Dimension(480, 150));
-                        movimiento.setBorder(BorderFactory.createTitledBorder(
-                                BorderFactory.createLineBorder(Color.BLACK),
-                                "Movimiento", 0, TitledBorder.DEFAULT_POSITION,
-                                new Font("Arial", Font.BOLD, 15), Color.BLACK)
-                        );
-                        rightPart.add(movimiento);
-                        //---------------------------------
-                        JLabel up = new JLabel("Moverse hacia arriba:");
-                        up.setBounds(25, 25, 200, 20);
-                        movimiento.add(up);
-                        JLabel upKey = new JLabel(String.valueOf((char) controlKeys[0]));
-                        upKey.setBounds(225, 25, 200, 20);
-                        movimiento.add(upKey);
-
-                        JLabel left = new JLabel("Moverse hacia la izquierda:");
-                        left.setBounds(25, 45, 200, 20);
-                        movimiento.add(left);
-                        JLabel leftKey = new JLabel(String.valueOf((char) controlKeys[1]));
-                        leftKey.setBounds(225, 45, 200, 20);
-                        movimiento.add(leftKey);
-
-                        JLabel down = new JLabel("Moverse hacia abajo:");
-                        down.setBounds(25, 65, 200, 20);
-                        movimiento.add(down);
-                        JLabel downKey = new JLabel(String.valueOf((char) controlKeys[2]));
-                        downKey.setBounds(225, 65, 200, 20);
-                        movimiento.add(downKey);
-
-                        JLabel right = new JLabel("Moverse hacia la derecha:");
-                        right.setBounds(25, 85, 200, 20);
-                        movimiento.add(right);
-                        JLabel rightKey = new JLabel(String.valueOf((char) controlKeys[3]));
-                        rightKey.setBounds(225, 85, 200, 20);
-                        movimiento.add(rightKey);
-
-                        JLabel inf = new JLabel("Abrir panel de informacion:");
-                        inf.setBounds(25, 105, 200, 20);
-                        movimiento.add(inf);
-                        JLabel infKey = new JLabel(String.valueOf((char) controlKeys[4]));
-                        infKey.setBounds(225, 105, 200, 20);
-                        movimiento.add(infKey);
-
-                        //---------------------------------
-
-                        JPanel controles = new JPanel();
-                        controles.setLayout(new BoxLayout(controles, BoxLayout.Y_AXIS));
-                        controles.setMinimumSize(new Dimension(480, 610));
-                        controles.setMaximumSize(new Dimension(480, 610));
-                        controles.setPreferredSize(new Dimension(480, 610));
-                        controles.setBorder(BorderFactory.createTitledBorder(
-                                BorderFactory.createLineBorder(Color.BLACK),
-                                "Controles", 0, TitledBorder.DEFAULT_POSITION,
-                                new Font("Arial", Font.BOLD, 15), Color.BLACK)
-                        );
-                        rightPart.add(controles);
-
-                        //---------------------------------
-                        {
-                            JPanel[] controlKeyPanels = new JPanel[5];
-                            for (int i = 0; i < controlKeyPanels.length; i++) {
-                                String texto = switch (i) {
-                                    case 0 -> "Up";
-                                    case 1 -> "Left";
-                                    case 2 -> "Down";
-                                    case 3 -> "Right";
-                                    case 4 -> "Informacion";
-                                    default -> throw new IllegalStateException("Unexpected value: " + i);
-                                };
-
-                                controlKeyPanels[i] = new JPanel();
-                                controlKeyPanels[i].setLayout(new GridBagLayout());
-                                controlKeyPanels[i].setBorder(BorderFactory.createTitledBorder(
-                                        BorderFactory.createLineBorder(Color.GRAY),
-                                        texto, 0, TitledBorder.DEFAULT_POSITION,
-                                        new Font("Arial", Font.BOLD, 15), Color.BLACK)
-                                );
-                                controles.add(controlKeyPanels[i]);
-
-                                int finalI = i;
-                                JButton changeControls = new JButton("Cambiar tecla de movimiento '" + texto + "'");
-                                changeControls.setBackground(Color.GREEN);
-                                changeControls.addActionListener(_ -> {
-                                    JFrame changeKeyFrame = new JFrame("Cambiar tecla de movimiento '" + texto + "'");
-                                    changeKeyFrame.setBounds(0, 0, 400, 150);
-                                    changeKeyFrame.setResizable(false);
-                                    changeKeyFrame.setLocationRelativeTo(null);
-                                    changeKeyFrame.setVisible(true);
-                                    changeKeyFrame.setFocusable(true);
-                                    changeKeyFrame.requestFocus();
-                                    changeKeyFrame.addKeyListener(new KeyAdapter() {
-                                        @Override
-                                        public void keyPressed(KeyEvent e) {
-                                            super.keyPressed(e);
-                                            controlKeys[finalI] = e.getKeyCode();
-                                            switch (texto) {
-                                                //↑↓←→
-                                                case "Up" -> {
-                                                    switch (controlKeys[0]) {
-                                                        case 38 -> upKey.setText("↑");
-                                                        case 37 -> upKey.setText("←");
-                                                        case 40 -> upKey.setText("↓");
-                                                        case 39 -> upKey.setText("→");
-                                                        default -> upKey.setText(String.valueOf((char) controlKeys[0]));
-                                                    }
-                                                }
-                                                case "Left" -> {
-                                                    switch (controlKeys[1]) {
-                                                        case 38 -> leftKey.setText("↑");
-                                                        case 37 -> leftKey.setText("←");
-                                                        case 40 -> leftKey.setText("↓");
-                                                        case 39 -> leftKey.setText("→");
-                                                        default -> leftKey.setText(String.valueOf((char) controlKeys[1]));
-                                                    }
-                                                }
-                                                case "Down" -> {
-                                                    switch (controlKeys[2]) {
-                                                        case 38 -> downKey.setText("↑");
-                                                        case 37 -> downKey.setText("←");
-                                                        case 40 -> downKey.setText("↓");
-                                                        case 39 -> downKey.setText("→");
-                                                        default -> downKey.setText(String.valueOf((char) controlKeys[2]));
-                                                    }
-                                                }
-                                                case "Right" -> {
-                                                    switch (controlKeys[3]) {
-                                                        case 38 -> rightKey.setText("↑");
-                                                        case 37 -> rightKey.setText("←");
-                                                        case 40 -> rightKey.setText("↓");
-                                                        case 39 -> rightKey.setText("→");
-                                                        default -> rightKey.setText(String.valueOf((char) controlKeys[3]));
-                                                    }
-                                                }
-                                                case "Informacion" -> {
-                                                    switch (controlKeys[4]) {
-                                                        case 38 -> infKey.setText("↑");
-                                                        case 37 -> infKey.setText("←");
-                                                        case 40 -> infKey.setText("↓");
-                                                        case 39 -> infKey.setText("→");
-                                                        default -> infKey.setText(String.valueOf((char) controlKeys[4]));
-                                                    }
-                                                }
-                                            }
-                                            changeKeyFrame.setVisible(false);
-                                            changeKeyFrame.dispose();
-                                        }
-                                    });
-
-                                    JLabel text = new JLabel("Presiona la tecla que desees asignar a '" + texto + "'.");
-                                    text.setBounds(10, 10, 230, 25);
-                                    text.setHorizontalAlignment(JLabel.CENTER);
-                                    changeKeyFrame.add(text);
-                                });
-                                controlKeyPanels[i].add(changeControls);
-
-                            }
-                        }
-                        //---------------------------------
-
-                        help.setBounds(0, 0, 1000, 800);
-                        help.setResizable(false);
-                        help.setLocationRelativeTo(null);
-                        help.setVisible(true);
-                        help.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                        help.setVisible(!help.isVisible());
                     }
                 } catch (IllegalArgumentException ex) {
                     System.err.println("ERROR: " + ex.getMessage());
-                }
+                } catch (ArrayIndexOutOfBoundsException _) {}
             }
         });
-
-        KeyEvent keyEvent = new KeyEvent(this, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_I, 'i');
-        getKeyListeners()[0].keyPressed(keyEvent);
     }
+
+    /*
+    Tamaño de sala: 5x5 -> 7x7
+        Se añade una fila y columna en cada lado para añadir el borde del mapa.
+     */
+    final char[][][] salas = {
+            /*
+            {
+                    {'X','X','X','X','X','X','X'},
+                    {'X',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ','T',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ','X'},
+                    {'X','X','X','X','X','X','X'},
+            },
+             */
+            {
+                    {'X','X','X','X','X','X','X'},
+                    {'X',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ','E',' ',' ','D'},
+                    {'X',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ','X'},
+                    {'X','X','X','X','X','X','X'}
+            },
+            {
+                    {'X','X','X','X','X','D','X','X','X','X','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ','X',' ','X',' ','X',' ',' ','X'},
+                    {'X',' ','X','X',' ',' ',' ','X','X',' ','X'},
+                    {'X',' ',' ',' ','X',' ','X',' ',' ',' ','X'},
+                    {'X',' ','X',' ',' ','E',' ',' ','X',' ','X'},
+                    {'X',' ',' ',' ','X',' ','X',' ',' ',' ','X'},
+                    {'X',' ','X','X',' ',' ',' ','X','X',' ','X'},
+                    {'X',' ',' ','X',' ','X',' ','X',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X','X','X','X','X','X','X','X','X','X','X'}
+            },
+            {
+                    {'X','X','X','X','X','X','X','X','X','X','X'},
+                    {'X',' ','X',' ',' ',' ',' ',' ','X',' ','X'},
+                    {'X','X',' ','X',' ','X',' ','X',' ','X','X'},
+                    {'X',' ','X',' ',' ',' ',' ',' ','X',' ','X'},
+                    {'X',' ',' ',' ','X',' ','X',' ',' ',' ','X'},
+                    {'X',' ','X',' ',' ','E',' ',' ','X',' ','X'},
+                    {'X',' ',' ',' ','X',' ','X',' ',' ',' ','X'},
+                    {'X',' ','X',' ',' ',' ',' ',' ','X',' ','X'},
+                    {'X','X',' ','X',' ','X',' ','X',' ','X','X'},
+                    {'X',' ','X',' ',' ',' ',' ',' ','X',' ','X'},
+                    {'X','X','X','X','X','D','X','X','X','X','X'}
+            },
+            {
+                    {'X','X','X','X','X','X','X'},
+                    {'X',' ',' ',' ',' ',' ','X'},
+                    {'X',' ','X',' ','X',' ','D'},
+                    {'X',' ',' ','E','X',' ','X'},
+                    {'X','X',' ',' ',' ','X','X'},
+                    {'X',' ','X',' ',' ',' ','X'},
+                    {'X','X','X','X','X','X','X'}
+            },
+            {
+                    {'X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','X'},
+                    {'X','X','X','X','X','X','X','X','X','X','X','X','X','D','X','X','X','X','X','X','X','X','X','X','X','X','X'}
+            }
+    };
 }
 
 // Clase unicamente para poder crear ventanas de error. No la cuento como necesaria para el juego.
